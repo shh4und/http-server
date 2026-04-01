@@ -20,6 +20,7 @@ impl Server {
         port: i32,
         backlog: i32,
         socket: i32,
+        address: sockaddr_in,
     ) -> Self {
         Self {
             domain,
@@ -29,6 +30,7 @@ impl Server {
             port,
             backlog,
             socket,
+            address,
         }
     }
 }

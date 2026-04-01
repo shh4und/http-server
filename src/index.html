@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Welcome | Hello World</title>
+        <style>
+            /* CSS Variables for easy customization */
+            :root {
+                --primary-gradient: linear-gradient(
+                    135deg,
+                    #667eea 0%,
+                    #764ba2 100%
+                );
+                --glass-bg: rgba(255, 255, 255, 0.1);
+                --text-color: #ffffff;
+                --accent-color: #00d2ff;
+            }
+
+            /* Reset & Base Styles */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+
+            body {
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--primary-gradient);
+                overflow: hidden;
+            }
+
+            /* Background Decorative Elements */
+            .circle {
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                z-index: 0;
+                animation: float 20s infinite linear;
+            }
+
+            /* Main Card Container */
+            .welcome-card {
+                position: relative;
+                z-index: 1;
+                padding: 3rem;
+                width: 90%;
+                max-width: 500px;
+                background: var(--glass-bg);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 20px;
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                text-align: center;
+                color: var(--text-color);
+                animation: fadeIn 1.2s ease-out;
+            }
+
+            /* Typography */
+            h1 {
+                font-size: 3rem;
+                margin-bottom: 0.5rem;
+                letter-spacing: -1px;
+                background: linear-gradient(
+                    to right,
+                    #fff,
+                    var(--accent-color)
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            p {
+                font-size: 1.1rem;
+                opacity: 0.9;
+                line-height: 1.6;
+                margin-bottom: 2rem;
+            }
+
+            /* Button Styling */
+            .btn {
+                display: inline-block;
+                padding: 0.8rem 2.5rem;
+                background: #ffffff;
+                color: #764ba2;
+                text-decoration: none;
+                border-radius: 50px;
+                font-weight: 600;
+                transition:
+                    transform 0.3s ease,
+                    box-shadow 0.3s ease;
+            }
+
+            .btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+
+            /* Animations */
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes float {
+                from {
+                    transform: translate(0, 0);
+                }
+                to {
+                    transform: translate(100px, 100px) rotate(360deg);
+                }
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 480px) {
+                h1 {
+                    font-size: 2.2rem;
+                }
+                .welcome-card {
+                    padding: 2rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div
+            class="circle"
+            style="width: 200px; height: 200px; top: -50px; left: -50px"
+        ></div>
+        <div
+            class="circle"
+            style="width: 300px; height: 300px; bottom: -100px; right: -50px"
+        ></div>
+
+        <main class="welcome-card">
+            <header>
+                <h1>Hello World</h1>
+                <p>
+                    Welcome to a beautifully designed landing page created with
+                    minimal code and maximum style.
+                </p>
+            </header>
+            <a href="#" class="btn">Get Started</a>
+        </main>
+    </body>
+</html>
