@@ -46,13 +46,7 @@ fn main() -> std::io::Result<()> {
 
     let listener = TcpListener::bind(&addrs)?;
     let mut response: Vec<u8> = Vec::new();
-    let response_header: &[u8] = "HTTP/1.1 200 OK
-        \nDate: Mon, 27 Jul 2009 12:28:53 GMT
-        \nServer: Apache/2.2.14 (Win32)
-        \nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT
-        \nContent-Type: text/html
-        \nConnection: Closed
-        \n\n"
+    let response_header: &[u8] = "HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 4751\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n"
         .as_bytes();
     response.extend_from_slice(response_header);
     let mut file = File::open("src/content/HelloWorld.html").unwrap();
@@ -70,27 +64,61 @@ fn main() -> std::io::Result<()> {
 }
 
 fn handle_conncection(stream: TcpStream, response_bytes: &[u8]) -> std::io::Result<()> {
-    let mut buf_writer = BufWriter::new(&stream);
+    let mut reader = BufReader::new(&stream);
 
-    _ = buf_writer.write_all(response_bytes);
-    let mut buf = String::new();
-    _ = BufReader::new(&stream).read_to_string(&mut buf)?;
-    let mut request: Vec<&str> = buf.splitn(2, "\r\n").collect();
+    let mut request_line = String::new();
+    reader.read_line(&mut request_line)?;
+    let request_line = request_line.trim();
 
-    let request_line: Vec<&str> = request.remove(0).split_ascii_whitespace().collect();
+    let mut headers: Vec<String> = Vec::new();
+    let mut content_length: usize = 0;
 
-    let request_remainder: Vec<&str> = request[0].splitn(2, "\r\n\r\n").collect();
-    let request_header: Vec<&str> = request_remainder[0].split("\r\n").collect();
-    let request_body: &str = request_remainder[1];
+    loop {
+        let mut line = String::new();
+        reader.read_line(&mut line)?;
+        let trimmed = line.trim();
 
-    let http_req_line = RequestLine{
-        method: request_line[0].to_owned(),
-        uri: request_line[1].to_owned(),
-        http_version: request_line[2].to_owned(),
+        if trimmed.is_empty() {
+            break; // linha em branco = fim dos headers
+        }
+
+        if trimmed.to_lowercase().starts_with("content-length:") {
+            let val = trimmed.split(':').nth(1).unwrap_or("0").trim();
+            content_length = val.parse().unwrap_or(0);
+        }
+
+        headers.push(trimmed.to_string());
+    }
+
+    let mut body_bytes = vec![0u8; content_length];
+
+    if content_length > 0 {
+        reader.read_exact(&mut body_bytes)?; // reader.read_exact continua leitura apos o \r\n
+    }
+
+    let body = String::from_utf8_lossy(&body_bytes);
+
+    let req_line_parts: Vec<&str> = request_line.split_ascii_whitespace().collect();
+
+
+    let http_req_line = RequestLine {
+        method: req_line_parts[0].to_owned(),
+        uri: req_line_parts[1].to_owned(),
+        http_version: req_line_parts[2].to_owned(),
     };
 
     println!(
-        "Request's Method: {}, URI: {}, HTTPVersion: {}\nRequest Header: {request_header:#?}\nRequest Body: {request_body:#?}"
-        , http_req_line.method, http_req_line.uri, http_req_line.http_version);
+        "Request Method: {}, URI: {}, HTTPVersion: {}\nRequest Header: {:#?}\nRequest Body: {:#?}",
+        http_req_line.method,
+        http_req_line.uri,
+        http_req_line.http_version,
+        headers,
+        body.as_ref()
+    );
+
+    // envio de reposta apos leitura de requisicao
+    let mut writer = BufWriter::new(&stream);
+    writer.write_all(response_bytes)?;
+    writer.flush()?;
     Ok(())
 }
