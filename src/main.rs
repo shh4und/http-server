@@ -1,45 +1,17 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufReader, BufWriter, Read, prelude::*},
     net::{SocketAddr, TcpListener, TcpStream},
 };
 
-// enum RequestMethods {
-//     GET,
-//     HEAD,
-//     POST,
-//     PUT,
-//     DELETE,
-//     CONNECT,
-//     OPTIONS,
-//     TRACE,
-// }
 
-pub struct RequestLine {
+pub struct HTTPRequest {
     method: String,
     uri: String,
     http_version: String,
+    header_fields: HashMap<String, String>,
 }
-
-// pub struct HeaderFields {
-//     host: String,            //127.0.0.1:7878",
-//     acept_encoding: Vec<u8>, //gzip, deflate",
-//     accept: String,          //*/*",
-//     connection: String,      // keep-alive",
-//     content_length: u32,     //9",
-//     user_agent: String,      //
-//     content_type: String,    // application/x-www-form-urlencoded; charset=utf-8",
-// }
-
-// pub struct MessageBody {
-//     body: Vec<u8>,
-// }
-
-// pub struct HTTPRequest {
-//     request_line: RequestLine,
-//     header_fields: HeaderFields,
-//     message_body: MessageBody,
-// }
 
 fn main() -> std::io::Result<()> {
     let addrs = SocketAddr::from(([127, 0, 0, 1], 7878));
@@ -90,6 +62,16 @@ fn handle_conncection(stream: TcpStream, response_bytes: &[u8]) -> std::io::Resu
         headers.push(trimmed.to_string());
     }
 
+    let mut header_fields: HashMap<String, String> = HashMap::new();
+
+    for fields in &headers {
+        let line = fields
+            .split_once(':')
+            .map(|elem| {(elem.0.trim(),elem.1.trim())}).unwrap_or(("",""));
+
+        header_fields.insert(line.0.to_string(), line.1.to_string());
+    }
+
     let mut body_bytes = vec![0u8; content_length];
 
     if content_length > 0 {
@@ -100,19 +82,19 @@ fn handle_conncection(stream: TcpStream, response_bytes: &[u8]) -> std::io::Resu
 
     let req_line_parts: Vec<&str> = request_line.split_ascii_whitespace().collect();
 
-
-    let http_req_line = RequestLine {
+    let http_req = HTTPRequest {
         method: req_line_parts[0].to_owned(),
         uri: req_line_parts[1].to_owned(),
         http_version: req_line_parts[2].to_owned(),
+        header_fields: header_fields,
     };
 
     println!(
         "Request Method: {}, URI: {}, HTTPVersion: {}\nRequest Header: {:#?}\nRequest Body: {:#?}",
-        http_req_line.method,
-        http_req_line.uri,
-        http_req_line.http_version,
-        headers,
+        http_req.method,
+        http_req.uri,
+        http_req.http_version,
+        http_req.header_fields,
         body.as_ref()
     );
 
