@@ -3,29 +3,40 @@ use std::{
     fs::File,
     io::{BufReader, BufWriter, Read, prelude::*},
     net::{SocketAddr, TcpListener, TcpStream},
+    time::SystemTime,
+    usize,
 };
 
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 mod http;
 use http::request::HTTPRequest;
 
 fn main() -> std::io::Result<()> {
+    // Server:
     const SERVER_NAME: &str = "HTTPServer/0.0.1";
     let addrs = SocketAddr::from(([127, 0, 0, 1], 7878));
 
     let listener = TcpListener::bind(&addrs)?;
     let mut response: Vec<u8> = Vec::new();
 
-    //datetime
-    let utc_time = Utc::now().format("%a, %d %b %Y %H:%M:%S %Z");
+    // Date:
+    let utc_time = Utc::now().to_rfc2822();
 
     let mut file = File::open("src/content/HelloWorld.html").unwrap();
     let mut response_content: Vec<u8> = Vec::new();
-    let content_length: usize = file.read_to_end(&mut response_content).unwrap();
+
+    // Content-Length:
+    let content_length: usize = file.read_to_end(&mut response_content)?;
+
+    // Last-Modified:
+    let metadata = file.metadata()?;
+    let last_modified: SystemTime = metadata.modified()?;
+    let last_modified_to_datetime: DateTime<Utc> = last_modified.clone().into();
+    let last_modified_to_string: String = last_modified_to_datetime.to_rfc2822();
     let response_header_f: String = format!(
-        "HTTP/1.1 200 OK\r\nDate: {utc_time}\r\nServer: {SERVER_NAME}\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: {content_length}\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n"
+        "HTTP/1.1 200 OK\r\nDate: {utc_time}\r\nServer: {SERVER_NAME}\r\nLast-Modified: {last_modified_to_string}\r\nContent-Length: {content_length}\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n"
     );
-    print!("{:#?}",file.metadata());
+
     let response_header_b: &[u8] = response_header_f.as_bytes();
     response.extend_from_slice(response_header_b);
     response.extend_from_slice(&response_content);
