@@ -7,42 +7,36 @@ use std::{
     usize,
 };
 
-use chrono::{DateTime, Utc};
 mod http;
 use http::request::HTTPRequest;
+use http::response::HTTPResponse;
 
 fn main() -> std::io::Result<()> {
-    // Server:
-    const SERVER_NAME: &str = "HTTPServer/0.0.1";
     let addrs = SocketAddr::from(([127, 0, 0, 1], 7878));
 
+    // faz o bind do endereco do socket, se a porta estiver disponivel
     let listener = TcpListener::bind(&addrs)?;
-    let mut response: Vec<u8> = Vec::new();
 
-    // Date:
-    let utc_time = Utc::now().to_rfc2822();
+    // aloca vetores dinamicos
+    let response: Vec<u8>;
+    let mut response_body: Vec<u8> = Vec::new();
+    // tenta abrir arquivo com conteudo html
+    let content_path = "src/content/HelloWorld.html".to_string();
 
-    let mut file = File::open("src/content/HelloWorld.html").unwrap();
-    let mut response_content: Vec<u8> = Vec::new();
+    let mut file = File::open(&content_path)?;
 
     // Content-Length:
-    let content_length: usize = file.read_to_end(&mut response_content)?;
+    let content_length: usize = file.read_to_end(&mut response_body)?;
 
     // Last-Modified:
     let metadata = file.metadata()?;
     let last_modified: SystemTime = metadata.modified()?;
-    let last_modified_to_datetime: DateTime<Utc> = last_modified.clone().into();
-    let last_modified_to_string: String = last_modified_to_datetime.to_rfc2822();
-    let response_header_f: String = format!(
-        "HTTP/1.1 200 OK\r\nDate: {utc_time}\r\nServer: {SERVER_NAME}\r\nLast-Modified: {last_modified_to_string}\r\nContent-Length: {content_length}\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n"
-    );
 
-    let response_header_b: &[u8] = response_header_f.as_bytes();
-    response.extend_from_slice(response_header_b);
-    response.extend_from_slice(&response_content);
+    let mut http_response = HTTPResponse::new(content_length, last_modified, &content_path);
+
+    response = http_response.full_response_u8(response_body);
 
     println!("\n- Address: http://{:#?}\n", &addrs);
-
     for stream in listener.incoming() {
         handle_conncection(stream?, response.as_slice())?;
     }
