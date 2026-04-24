@@ -1,9 +1,7 @@
 use std::{
     collections::HashMap,
-    fs::File,
     io::{BufReader, BufWriter, Read, prelude::*},
     net::{SocketAddr, TcpListener, TcpStream},
-    time::SystemTime,
     usize,
 };
 
@@ -19,22 +17,13 @@ fn main() -> std::io::Result<()> {
 
     // aloca vetores dinamicos
     let response: Vec<u8>;
-    let mut response_body: Vec<u8> = Vec::new();
+
     // tenta abrir arquivo com conteudo html
-    let content_path = "src/content/HelloWorld.html".to_string();
+    let path = "../src/content/HelloWorld.html".to_string();
 
-    let mut file = File::open(&content_path)?;
+    let mut http_response = HTTPResponse::new(path);
 
-    // Content-Length:
-    let content_length: usize = file.read_to_end(&mut response_body)?;
-
-    // Last-Modified:
-    let metadata = file.metadata()?;
-    let last_modified: SystemTime = metadata.modified()?;
-
-    let mut http_response = HTTPResponse::new(content_length, last_modified, &content_path);
-
-    response = http_response.full_response_u8(response_body);
+    response = http_response.full_response_u8();
 
     println!("\n- Address: http://{:#?}\n", &addrs);
     for stream in listener.incoming() {
